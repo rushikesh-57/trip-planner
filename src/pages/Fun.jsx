@@ -1,24 +1,28 @@
 import { useState, useEffect, useContext } from "react";
 import { UserContext } from "../App";
 import { db } from "../firebase";
-import { doc, setDoc, onSnapshot } from "firebase/firestore";
+import { doc, setDoc, onSnapshot, getDoc } from "firebase/firestore";
 
 export default function Fun() {
   const user = useContext(UserContext);
   const [songName, setSongName] = useState("");
   const [playlist, setPlaylist] = useState([]);
 
+  // Shared playlist document for the trip (visible to everyone)
+  const PLAYLIST_DOC = doc(db, "trips", "murudeshwar_gokarna", "fun", "playlist");
+
   useEffect(() => {
     if (!user) return;
-    const docRef = doc(db, "users", user.uid, "fun", "playlist");
+
+    // Subscribe to shared playlist
     const unsub = onSnapshot(
-      docRef,
+      PLAYLIST_DOC,
       (snap) => {
         if (snap.exists()) {
           setPlaylist(snap.data().songs || []);
         } else {
-          // initialize
-          setDoc(docRef, { songs: [] }).catch(() => {});
+          // initialize shared playlist if missing
+          setDoc(PLAYLIST_DOC, { songs: [] }).catch(() => {});
           setPlaylist([]);
         }
       },
@@ -26,6 +30,7 @@ export default function Fun() {
         console.error("Playlist snapshot error:", err);
       }
     );
+
     return () => unsub();
   }, [user]);
 
@@ -36,14 +41,16 @@ export default function Fun() {
       id,
       name: songName.trim(),
       addedBy: user.displayName || user.email || "Unknown",
+      addedByUid: user.uid,
       votes: [], // store voter uids
       createdAt: new Date(),
     };
-    const docRef = doc(db, "users", user.uid, "fun", "playlist");
+
     try {
+      // optimistic update locally
       const next = [song, ...(playlist || [])];
       setPlaylist(next);
-      await setDoc(docRef, { songs: next });
+      await setDoc(PLAYLIST_DOC, { songs: next });
     } catch (e) {
       console.error("Failed to add song:", e);
     } finally {
@@ -53,32 +60,50 @@ export default function Fun() {
 
   const removeSong = async (id) => {
     if (!user || !window.confirm("Remove this song?")) return;
-    const docRef = doc(db, "users", user.uid, "fun", "playlist");
+    // allow removal only by the adder or organizer (simple rule)
+    const target = (playlist || []).find((s) => s.id === id);
+    if (!target) return;
+    if (target.addedByUid !== user.uid) {
+      alert("Only the person who added the song can remove it.");
+      return;
+    }
+
     const next = (playlist || []).filter((s) => s.id !== id);
     try {
       setPlaylist(next);
-      await setDoc(docRef, { songs: next });
+      await setDoc(PLAYLIST_DOC, { songs: next });
     } catch (e) {
       console.error("Failed to remove song:", e);
     }
   };
 
-  // one vote per person across all songs
+  // one vote per person across all songs; users cannot vote their own songs
   const voteSong = async (songId) => {
     if (!user) return;
     const uid = user.uid;
-    const alreadyVotedAnywhere = (playlist || []).some((s) => (s.votes || []).includes(uid));
-    if (alreadyVotedAnywhere) {
-      alert("You have already voted.");
+
+    // prevent voting own song
+    const target = (playlist || []).find((s) => s.id === songId);
+    if (!target) return;
+    if (target.addedByUid === uid) {
+      alert("You cannot vote for your own suggestion.");
       return;
     }
-    const docRef = doc(db, "users", user.uid, "fun", "playlist");
+
+    // check if user already voted anywhere
+    const alreadyVotedAnywhere = (playlist || []).some((s) => (s.votes || []).includes(uid));
+    if (alreadyVotedAnywhere) {
+      alert("You have already voted for a song.");
+      return;
+    }
+
     const next = (playlist || []).map((s) =>
       s.id === songId ? { ...s, votes: [...(s.votes || []), uid] } : s
     );
+
     try {
       setPlaylist(next);
-      await setDoc(docRef, { songs: next });
+      await setDoc(PLAYLIST_DOC, { songs: next });
     } catch (e) {
       console.error("Failed to vote:", e);
     }
@@ -89,7 +114,7 @@ export default function Fun() {
     return (playlist || []).some((s) => (s.votes || []).includes(user.uid));
   };
 
-  // button styles (inline to ensure immediate effect)
+  // button styles (inline for immediate effect)
   const voteBtnBase = {
     minHeight: 40,
     padding: "8px 12px",
@@ -116,7 +141,11 @@ export default function Fun() {
         <h2>Group Playlist</h2>
         <input placeholder="Song name" value={songName} onChange={(e) => setSongName(e.target.value)} />
         <div className="row" style={{ marginTop: 8 }}>
-          <button onClick={addSong} disabled={!songName.trim()} style={{ ...voteBtnBase, background: "#06b6d4", color: "#fff", width: "100%" }}>
+          <button
+            onClick={addSong}
+            disabled={!songName.trim()}
+            style={{ ...voteBtnBase, background: "#06b6d4", color: "#fff", width: "100%" }}
+          >
             Add to playlist
           </button>
         </div>
@@ -141,8 +170,12 @@ export default function Fun() {
                 <div key={s.id} className="row" style={{ alignItems: "center", gap: 8 }}>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontWeight: 600 }}>{s.name}</div>
-                    <div className="muted" style={{ fontSize: "0.9rem" }}>added by {s.addedBy}</div>
-                    <div className="muted" style={{ fontSize: "0.85rem" }}>Votes: {count}</div>
+                    <div className="muted" style={{ fontSize: "0.9rem" }}>
+                      added by {s.addedBy}
+                    </div>
+                    <div className="muted" style={{ fontSize: "0.85rem" }}>
+                      Votes: {count}
+                    </div>
                   </div>
                   <div style={{ display: "flex", gap: 6 }}>
                     <button
@@ -150,10 +183,13 @@ export default function Fun() {
                       style={voteBtnStyle}
                       disabled={globalVoted && !votedByUser}
                       aria-pressed={votedByUser}
+                      title={s.addedByUid === user.uid ? "Cannot vote your own suggestion" : ""}
                     >
-                      {votedByUser ? "Voted" : "Vote"}
+                      {s.addedByUid === user.uid ? "Own" : votedByUser ? "Voted" : "Vote"}
                     </button>
-                    <button onClick={() => removeSong(s.id)} style={removeBtnStyle}>Remove</button>
+                    <button onClick={() => removeSong(s.id)} style={removeBtnStyle}>
+                      Remove
+                    </button>
                   </div>
                 </div>
               );
