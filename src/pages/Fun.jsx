@@ -36,6 +36,16 @@ export default function Fun() {
 
   const addSong = async () => {
     if (!songName.trim() || !user) return;
+    const normalized = songName.trim().toLowerCase();
+    // prevent duplicates (case-insensitive, trim)
+    const exists = (playlist || []).some(
+      (s) => (s.name || "").trim().toLowerCase() === normalized
+    );
+    if (exists) {
+      alert("This song has already been suggested.");
+      return;
+    }
+
     const id = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : String(Date.now());
     const song = {
       id,
@@ -60,7 +70,7 @@ export default function Fun() {
 
   const removeSong = async (id) => {
     if (!user || !window.confirm("Remove this song?")) return;
-    // allow removal only by the adder or organizer (simple rule)
+    // allow removal only by the adder
     const target = (playlist || []).find((s) => s.id === id);
     if (!target) return;
     if (target.addedByUid !== user.uid) {
@@ -77,42 +87,35 @@ export default function Fun() {
     }
   };
 
-  // one vote per person across all songs; users cannot vote their own songs
+  // toggle vote per song (one vote max per song per user) and allow undo
   const voteSong = async (songId) => {
     if (!user) return;
     const uid = user.uid;
 
-    // prevent voting own song
-    const target = (playlist || []).find((s) => s.id === songId);
-    if (!target) return;
-    if (target.addedByUid === uid) {
-      alert("You cannot vote for your own suggestion.");
-      return;
-    }
-
-    // check if user already voted anywhere
-    const alreadyVotedAnywhere = (playlist || []).some((s) => (s.votes || []).includes(uid));
-    if (alreadyVotedAnywhere) {
-      alert("You have already voted for a song.");
-      return;
-    }
-
-    const next = (playlist || []).map((s) =>
-      s.id === songId ? { ...s, votes: [...(s.votes || []), uid] } : s
-    );
-
     try {
+      const snap = await getDoc(PLAYLIST_DOC);
+      const current = snap.exists() ? snap.data().songs || [] : (playlist || []);
+      const next = current.map((s) => {
+        if (s.id !== songId) return s;
+        const votes = Array.isArray(s.votes) ? s.votes.slice() : [];
+        if (votes.includes(uid)) {
+          // undo vote
+          return { ...s, votes: votes.filter((v) => v !== uid) };
+        } else {
+          // add vote (only once per song)
+          return { ...s, votes: [...votes, uid] };
+        }
+      });
+      // optimistic update and persist
       setPlaylist(next);
       await setDoc(PLAYLIST_DOC, { songs: next });
     } catch (e) {
-      console.error("Failed to vote:", e);
+      console.error("Failed to toggle vote:", e);
     }
   };
 
-  const userHasVoted = () => {
-    if (!user) return false;
-    return (playlist || []).some((s) => (s.votes || []).includes(user.uid));
-  };
+  // compute max votes to highlight top songs
+  const maxVotes = playlist.length ? Math.max(...playlist.map((s) => (Array.isArray(s.votes) ? s.votes.length : 0))) : 0;
 
   // button styles (inline for immediate effect)
   const voteBtnBase = {
@@ -133,7 +136,6 @@ export default function Fun() {
     fontWeight: 600,
     cursor: "pointer",
   };
-  const disabledStyle = { opacity: 0.6, cursor: "not-allowed" };
 
   return (
     <div className="container">
@@ -155,21 +157,37 @@ export default function Fun() {
             <p className="empty-state">Playlist is empty — add a song!</p>
           ) : (
             playlist.map((s) => {
-              const count = (s.votes || []).length;
-              const votedByUser = user && (s.votes || []).includes(user.uid);
-              const globalVoted = userHasVoted();
+              const votes = Array.isArray(s.votes) ? s.votes : [];
+              const count = votes.length;
+              const votedByUser = user && votes.includes(user.uid);
               const voteBtnStyle = {
                 ...voteBtnBase,
                 background: votedByUser ? "#10b981" : "#0ea5a4",
                 color: "#fff",
                 marginRight: 6,
-                ...(globalVoted && !votedByUser ? disabledStyle : {}),
               };
 
+              const topHighlight = count > 0 && count === maxVotes;
+
               return (
-                <div key={s.id} className="row" style={{ alignItems: "center", gap: 8 }}>
+                <div
+                  key={s.id}
+                  className="row"
+                  style={{
+                    alignItems: "center",
+                    gap: 8,
+                    border: topHighlight ? "2px solid #f59e0b" : undefined,
+                    boxShadow: topHighlight ? "0 6px 18px rgba(245,158,11,0.08)" : undefined,
+                    padding: topHighlight ? 12 : undefined,
+                    borderRadius: topHighlight ? 10 : undefined,
+                    background: topHighlight ? "#fffaf0" : undefined,
+                  }}
+                >
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 600 }}>{s.name}</div>
+                    <div style={{ fontWeight: 600, display: "flex", gap: 8, alignItems: "center" }}>
+                      <span>{s.name}</span>
+                      {topHighlight && <span className="badge" style={{ marginLeft: 8 }}>Top</span>}
+                    </div>
                     <div className="muted" style={{ fontSize: "0.9rem" }}>
                       added by {s.addedBy}
                     </div>
@@ -181,13 +199,16 @@ export default function Fun() {
                     <button
                       onClick={() => voteSong(s.id)}
                       style={voteBtnStyle}
-                      disabled={globalVoted && !votedByUser}
                       aria-pressed={votedByUser}
-                      title={s.addedByUid === user.uid ? "Cannot vote your own suggestion" : ""}
+                      title={votedByUser ? "Undo your vote" : "Vote for this song"}
                     >
-                      {s.addedByUid === user.uid ? "Own" : votedByUser ? "Voted" : "Vote"}
+                      {votedByUser ? "Undo" : "Vote"}
                     </button>
-                    <button onClick={() => removeSong(s.id)} style={removeBtnStyle}>
+                    <button
+                      onClick={() => removeSong(s.id)}
+                      style={removeBtnStyle}
+                      title={s.addedByUid === user.uid ? "Remove your song" : "Only the adder can remove"}
+                    >
                       Remove
                     </button>
                   </div>
