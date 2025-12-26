@@ -41,20 +41,6 @@ export default function Home() {
       </div>
 
       <div className="card">
-        <h3>Vehicles</h3>
-        {vehicles.map(v => (
-          <div className="row" key={v.name}>
-            <div>{v.name}</div>
-            <div className="muted">{v.seats} seats</div>
-          </div>
-        ))}
-        <div className="row small">
-          <div>Total seats</div>
-          <div className="muted">{seatsTotal} vs {members.length} people</div>
-        </div>
-      </div>
-
-      <div className="card">
         <h3>Quick timeline</h3>
         <ol className="timeline">
           <li>27 Dec — Arrive Satara in the evening (overnight stay in Satara)</li>

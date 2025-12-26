@@ -27,7 +27,7 @@ export default function App() {
   if (!user) {
     return (
       <div className="login-screen">
-        <h1>मुरुडेश्वर – गोकर्ण सहल</h1>
+        <h1>काफिला — मुरुडेश्वर – गोकर्ण सहल</h1>
         <p className="muted">सहलीसाठी लॉगिन करा</p>
         <button onClick={login}>Login with Google</button>
       </div>

@@ -1,4 +1,4 @@
-body { font-family: Inter, Roboto, -apple-system, 'Segoe UI', sans-serif; background:#f4f6f8; margin:0; color:#1f2937; }
+body { font-family: "Noto Sans", Inter, Roboto, sans-serif; background:#f4f6f8; margin:0; color:#1f2937; }
 .app { max-width:420px; margin:0 auto; min-height:100vh; display:flex; flex-direction:column; }
 
 /* header */
@@ -7,8 +7,8 @@ body { font-family: Inter, Roboto, -apple-system, 'Segoe UI', sans-serif; backgr
 .trip-dates { font-size:0.85rem; color:#6b7280; }
 
 /* main page content */
-.page-content { padding:12px; padding-bottom:80px; flex:1; }
-.container { display:flex; flex-direction:column; gap:12px; }
+.page-content { padding:12px; padding-bottom:120px; flex:1; }
+.container { display:flex; flex-direction:column; gap:12px; padding-bottom:100px; }
 
 /* cards */
 .card { background:#fff; border-radius:10px; padding:12px; box-shadow:0 1px 4px rgba(0,0,0,0.04); }
@@ -16,9 +16,10 @@ body { font-family: Inter, Roboto, -apple-system, 'Segoe UI', sans-serif; backgr
 
 /* inputs/buttons */
 input, select, button { width:100%; padding:10px; margin-top:8px; border-radius:8px; border:1px solid #e5e7eb; font-size:1rem; box-sizing:border-box; }
-button { background:#0ea5a4; color:#fff; border:none; cursor:pointer; }
+button, .small-btn, .chip { min-height:42px; padding:10px 12px; border-radius:10px; background:#0ea5a4; color:#fff; border:none; cursor:pointer; }
 button:disabled { opacity:0.5; cursor:not-allowed; }
-.muted-btn { background:#f3f4f6; color:#374151; }
+.muted-btn { background:#f3f4f6; color:#374151; width:auto; padding:8px 12px; }
+.small-btn { margin-left:6px; padding:6px 10px; border-radius:6px; background:#eef2ff; border:none; }
 
 /* chips & lists */
 .chip-container, .split-chips { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
@@ -61,8 +62,11 @@ button:disabled { opacity:0.5; cursor:not-allowed; }
 
 /* responsive */
 @media (max-width:420px){
-  .page-content { padding-bottom:110px; }
-  .bottom-nav { left:8px; transform:none; width:calc(100% - 16px); max-width:none; }
+  .site-title { font-size: 1.1rem; }
+  .trip-dates { font-size: 0.85rem; }
+  .card { padding: 12px; }
+  .bottom-nav { padding: 10px; }
+  .nav-item { font-size: 0.85rem; }
 }
 
 /* empty state */
@@ -70,5 +74,3 @@ button:disabled { opacity:0.5; cursor:not-allowed; }
 
 /* done item */
 .done { text-decoration:line-through; opacity:0.6; }
-.muted-btn { width:auto; padding:8px 12px; }
-.small-btn { margin-left:6px; padding:6px 10px; border-radius:6px; background:#eef2ff; border:none; }

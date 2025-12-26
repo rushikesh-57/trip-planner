@@ -11,8 +11,8 @@ export default function Layout() {
     <div className="app">
       <header className="sticky-header">
         <div className="header-left">
-          <div className="trip-title">मुरुडेश्वर – गोकर्ण सहल</div>
-          <div className="trip-dates">27 Dec – 1 Jan</div>
+          <div className="site-title">काफिला</div>
+          <div className="trip-dates">मुरुडेश्वर – गोकर्ण | 27 Dec – 1 Jan</div>
         </div>
         <div className="header-right">
           <div className="user-name">👋 {user.displayName}</div>
