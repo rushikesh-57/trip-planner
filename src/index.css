@@ -1,0 +1,74 @@
+body { font-family: Inter, Roboto, -apple-system, 'Segoe UI', sans-serif; background:#f4f6f8; margin:0; color:#1f2937; }
+.app { max-width:420px; margin:0 auto; min-height:100vh; display:flex; flex-direction:column; }
+
+/* header */
+.sticky-header { position:sticky; top:0; background:#fff; padding:10px; border-bottom:1px solid #e6e6e6; z-index:20; display:flex; justify-content:space-between; align-items:center; gap:12px; }
+.trip-title { font-weight:600; font-size:1.05rem; }
+.trip-dates { font-size:0.85rem; color:#6b7280; }
+
+/* main page content */
+.page-content { padding:12px; padding-bottom:80px; flex:1; }
+.container { display:flex; flex-direction:column; gap:12px; }
+
+/* cards */
+.card { background:#fff; border-radius:10px; padding:12px; box-shadow:0 1px 4px rgba(0,0,0,0.04); }
+.card-title { margin:0 0 6px 0; font-size:1.1rem; }
+
+/* inputs/buttons */
+input, select, button { width:100%; padding:10px; margin-top:8px; border-radius:8px; border:1px solid #e5e7eb; font-size:1rem; box-sizing:border-box; }
+button { background:#0ea5a4; color:#fff; border:none; cursor:pointer; }
+button:disabled { opacity:0.5; cursor:not-allowed; }
+.muted-btn { background:#f3f4f6; color:#374151; }
+
+/* chips & lists */
+.chip-container, .split-chips { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+.chip { background:#eef2ff; padding:6px 10px; border-radius:20px; font-size:0.9rem; color:#312e81; }
+.btn-chip { border:none; cursor:pointer; }
+
+/* expense list */
+.expense-list { display:flex; flex-direction:column; gap:10px; max-height:340px; overflow:auto; padding-right:4px; }
+.expense-card { border-radius:8px; padding:10px; background:#f8fafc; border:1px solid #e6eef8; }
+.expense-header { display:flex; justify-content:space-between; align-items:center; }
+.expense-amount { color:#0369a1; font-weight:600; }
+.expense-details { display:flex; justify-content:space-between; margin-top:6px; font-size:0.9rem; color:#6b7280; }
+.payer-highlight { color:#059669; font-weight:600; }
+.expense-actions { display:flex; gap:8px; margin-top:10px; }
+.expense-actions button { flex:1; padding:8px; font-size:0.9rem; }
+
+/* balances */
+.row { display:flex; justify-content:space-between; align-items:center; padding:6px 0; }
+.positive { color:green; font-weight:600; }
+.negative { color:red; font-weight:600; }
+
+/* itinerary */
+.timeline { padding-left:18px; margin:8px 0 0; }
+.it-day { margin-bottom:10px; }
+.it-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+.it-date { font-weight:600; }
+
+/* badges */
+.badge { display:inline-block; margin-top:8px; background:#ffedd5; color:#92400e; padding:6px 8px; border-radius:8px; font-size:0.85rem; }
+
+/* bottom nav */
+.bottom-nav { position:fixed; bottom:8px; left:50%; transform:translateX(-50%); width:calc(100% - 24px); max-width:420px; background:rgba(255,255,255,0.98); border-radius:14px; box-shadow:0 6px 18px rgba(2,6,23,0.08); display:flex; gap:6px; padding:8px; justify-content:space-between; z-index:30; }
+.nav-item { flex:1; text-align:center; padding:8px 6px; border-radius:8px; color:#374151; text-decoration:none; font-size:0.9rem; }
+.nav-item.active { background:#0ea5a4; color:#fff; }
+
+/* small helpers */
+.muted { color:#6b7280; font-size:0.95rem; }
+.small { font-size:0.9rem; }
+.card-small { padding:10px; }
+
+/* responsive */
+@media (max-width:420px){
+  .page-content { padding-bottom:110px; }
+  .bottom-nav { left:8px; transform:none; width:calc(100% - 16px); max-width:none; }
+}
+
+/* empty state */
+.empty-state { text-align:center; color:#6b7280; padding:12px 0; font-style:italic; }
+
+/* done item */
+.done { text-decoration:line-through; opacity:0.6; }
+.muted-btn { width:auto; padding:8px 12px; }
+.small-btn { margin-left:6px; padding:6px 10px; border-radius:6px; background:#eef2ff; border:none; }
