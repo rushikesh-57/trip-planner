@@ -1,6 +1,6 @@
 import { useContext, useEffect, useState } from "react";
 import { UserContext } from "../App";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "../firebase";
 
 export default function Home() {
@@ -10,9 +10,10 @@ export default function Home() {
   useEffect(() => {
     if (!user) return;
     const membersRef = doc(db, "users", user.uid, "data", "members");
-    getDoc(membersRef).then((snap) => {
+    const unsub = onSnapshot(membersRef, (snap) => {
       setMembers((snap.exists() && snap.data().list) || []);
     });
+    return () => unsub();
   }, [user]);
 
   const vehicles = [

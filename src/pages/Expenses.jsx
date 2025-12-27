@@ -6,7 +6,6 @@ import {
   collection,
   doc,
   setDoc,
-  getDoc,
   updateDoc,
   deleteDoc,
   onSnapshot,
@@ -38,6 +37,7 @@ export default function Expenses() {
       "Aditya",
       "Ashutosh",
       "Ashwin",
+      "Hiren",
       "Kedar",
       "Krushna",
       "Prathamesh",
@@ -47,10 +47,9 @@ export default function Expenses() {
       "Tejas",
     ];
 
-    getDoc(membersRef).then(async (snap) => {
+    const unsubMembers = onSnapshot(membersRef, async (snap) => {
       if (snap.exists()) {
         const list = snap.data().list || [];
-        // if doc exists but empty, seed defaults (safe-only-if-empty)
         if (!Array.isArray(list) || list.length === 0) {
           setMembers(defaultMembers);
           try {
@@ -62,7 +61,6 @@ export default function Expenses() {
           setMembers(list);
         }
       } else {
-        // no members doc yet -> seed defaults
         setMembers(defaultMembers);
         try {
           await setDoc(membersRef, { list: defaultMembers });
@@ -89,7 +87,14 @@ export default function Expenses() {
         )
       );
     });
-    return () => unsub();
+    return () => {
+      try {
+        unsub();
+      } catch (e) {}
+      try {
+        unsubMembers();
+      } catch (e) {}
+    };
   }, [user]);
 
   useEffect(() => setSelectedMembers(members), [members]);
@@ -107,6 +112,17 @@ export default function Expenses() {
     const membersRef = doc(db, "users", user.uid, "data", "members");
     await setDoc(membersRef, { list: newMembers });
     setMemberName("");
+  };
+
+  const removeMember = async (name) => {
+    if (!user) return;
+    if (!window.confirm(`Remove ${name}?`)) return;
+    const newMembers = members.filter((m) => m !== name);
+    setMembers(newMembers);
+    const membersRef = doc(db, "users", user.uid, "data", "members");
+    await setDoc(membersRef, { list: newMembers });
+    // keep selectedMembers in sync
+    setSelectedMembers((prev) => prev.filter((m) => m !== name));
   };
 
   const handleSplitChange = (member, value) =>
@@ -286,6 +302,22 @@ export default function Expenses() {
               Cancel
             </button>
           )}
+        </div>
+      </div>
+
+      <div className="card">
+        <h3>Members ({members.length})</h3>
+        <div className="row">
+          <input placeholder="New member name" value={memberName} onChange={(e) => setMemberName(e.target.value)} />
+          <button onClick={addMember}>Add</button>
+        </div>
+        <div className="chip-container">
+          {members.map((m) => (
+            <span key={m} className="chip">
+              {m}
+              <button onClick={() => removeMember(m)} style={{ marginLeft: 8 }} className="muted-btn">Remove</button>
+            </span>
+          ))}
         </div>
       </div>
 
